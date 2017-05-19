@@ -3,13 +3,17 @@
   <Import Project="..\..\..\build\dependencies.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>net451;netcoreapp1.0</TargetFrameworks>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <PropertyGroup>
     <TypeScriptEnabled>false</TypeScriptEnabled>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;NETCOREAPP1_1</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

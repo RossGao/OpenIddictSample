@@ -43,7 +43,7 @@ namespace ClientApp
                 // inserted in the database at the server level.
                 ClientId = "mvc",
                 ClientSecret = "901564A5-E7FE-42CB-B10D-61EF6A8F3654",
-                PostLogoutRedirectUri = "http://localhost:53507/",
+                PostLogoutRedirectUri = "http://localhost:8009/",
 
                 RequireHttpsMetadata = false,
                 GetClaimsFromUserInfoEndpoint = true,
@@ -56,7 +56,7 @@ namespace ClientApp
                 // Note: setting the Authority allows the OIDC client middleware to automatically
                 // retrieve the identity provider's configuration and spare you from setting
                 // the different endpoints URIs or the token validation parameters explicitly.
-                Authority = "http://localhost:54540/",
+                Authority = "http://localhost:8010/",
 
                 Scope = { "email", "roles" }
             });

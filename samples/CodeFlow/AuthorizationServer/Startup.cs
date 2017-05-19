@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using AspNet.Security.OpenIdConnect.Primitives;
 using AuthorizationServer.Extensions;
 using AuthorizationServer.Models;
@@ -10,8 +7,12 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using OpenIddict.Core;
 using OpenIddict.Models;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace AuthorizationServer
 {
@@ -96,6 +97,10 @@ namespace AuthorizationServer
 
         public void Configure(IApplicationBuilder app)
         {
+            var logFactory = app.ApplicationServices.GetRequiredService<ILoggerFactory>();
+            logFactory.AddConsole();
+            logFactory.AddDebug();
+
             app.UseDeveloperExceptionPage();
 
             app.UseStaticFiles();
@@ -114,7 +119,7 @@ namespace AuthorizationServer
                 //
                 // branch.UseJwtBearerAuthentication(new JwtBearerOptions
                 // {
-                //     Authority = "http://localhost:54540/",
+                //     Authority = "http://localhost:8010/",
                 //     Audience = "resource_server",
                 //     RequireHttpsMetadata = false,
                 //     TokenValidationParameters = new TokenValidationParameters
@@ -130,7 +135,7 @@ namespace AuthorizationServer
                 //
                 // branch.UseOAuthIntrospection(options =>
                 // {
-                //     options.Authority = new Uri("http://localhost:54540/");
+                //     options.Authority = new Uri("http://localhost:8010/");
                 //     options.Audiences.Add("resource_server");
                 //     options.ClientId = "resource_server";
                 //     options.ClientSecret = "875sqd4s5d748z78z7ds1ff8zz8814ff88ed8ea4z4zzd";
@@ -175,39 +180,48 @@ namespace AuthorizationServer
                 await context.Database.EnsureCreatedAsync();
 
                 var manager = scope.ServiceProvider.GetRequiredService<OpenIddictApplicationManager<OpenIddictApplication>>();
+                var mvcApplication = new OpenIddictApplication                 // The applications are valid clients that can call authentication server.
+                {
+                    ClientId = "mvc",
+                    DisplayName = "MVC client application",
+                    LogoutRedirectUri = "http://localhost:8009/",
+                    RedirectUri = "http://localhost:8009/signin-oidc",
+                };
 
                 if (await manager.FindByClientIdAsync("mvc", cancellationToken) == null)
                 {
-                    var application = new OpenIddictApplication
-                    {
-                        ClientId = "mvc",
-                        DisplayName = "MVC client application",
-                        LogoutRedirectUri = "http://localhost:53507/",
-                        RedirectUri = "http://localhost:53507/signin-oidc"
-                    };
-
-                    await manager.CreateAsync(application, "901564A5-E7FE-42CB-B10D-61EF6A8F3654", cancellationToken);
+                    await manager.CreateAsync(mvcApplication, "901564A5-E7FE-42CB-B10D-61EF6A8F3654", cancellationToken);
+                }
+                else
+                {
+                    mvcApplication.Type = OpenIddictConstants.ClientTypes.Confidential;         // update needs applicaiton type to not be null.
+                    await manager.UpdateAsync(mvcApplication, "901564A5-E7FE-42CB-B10D-61EF6A8F3654", cancellationToken);
                 }
 
                 // To test this sample with Postman, use the following settings:
                 //
-                // * Authorization URL: http://localhost:54540/connect/authorize
-                // * Access token URL: http://localhost:54540/connect/token
+                // * Authorization URL: http://localhost:8010/connect/authorize
+                // * Access token URL: http://localhost:8010/connect/token
                 // * Client ID: postman
                 // * Client secret: [blank] (not used with public clients)
                 // * Scope: openid email profile roles
                 // * Grant type: authorization code
                 // * Request access token locally: yes
+                var postMan = new OpenIddictApplication
+                {
+                    ClientId = "postman",
+                    DisplayName = "Postman",
+                    RedirectUri = "https://www.getpostman.com/oauth2/callback"
+                };
+
                 if (await manager.FindByClientIdAsync("postman", cancellationToken) == null)
                 {
-                    var application = new OpenIddictApplication
-                    {
-                        ClientId = "postman",
-                        DisplayName = "Postman",
-                        RedirectUri = "https://www.getpostman.com/oauth2/callback"
-                    };
-
-                    await manager.CreateAsync(application, cancellationToken);
+                    await manager.CreateAsync(postMan, cancellationToken);
+                }
+                else
+                {
+                    postMan.Type = OpenIddictConstants.ClientTypes.Public;
+                    await manager.UpdateAsync(postMan, cancellationToken);
                 }
             }
         }
